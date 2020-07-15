@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { css } from "@emotion/core";
 import { Cell } from "./Cell";
 
@@ -47,6 +47,30 @@ const RowBody: React.FC = ({ children }) => {
 };
 
 export const Rows: React.FC<RowsProps> = ({ width, height }) => {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [cursor, setCursor] = useState([0, 0]);
+
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (sheetRef.current && event.clientX > 50) {
+        const ix = Math.floor(
+          (event.clientX - 50 - sheetRef.current.offsetLeft) /
+            ((sheetRef.current.clientWidth - 50) / width)
+        );
+        const iy =
+          Math.floor(
+            (event.clientY - sheetRef.current.offsetTop) /
+              (sheetRef.current.clientHeight / (height + 1))
+          ) - 1;
+
+        if (iy >= 0) {
+          setCursor([ix, iy]);
+        }
+      }
+    },
+    [height, width]
+  );
+
   return (
     <div
       css={css`
@@ -54,6 +78,8 @@ export const Rows: React.FC<RowsProps> = ({ width, height }) => {
         border-top: 1px solid #bbb;
         position: relative;
       `}
+      onClick={handleClick}
+      ref={sheetRef}
     >
       <Row>
         <Cell header maxWidth={50}>
@@ -74,7 +100,7 @@ export const Rows: React.FC<RowsProps> = ({ width, height }) => {
           </Cell>
           <RowBody>
             {Array.from(Array(width), (_, k) => k).map((_, x) => (
-              <Cell key={x}>
+              <Cell key={x} selected={cursor[0] === x && cursor[1] === y}>
                 <input
                   css={css`
                     outline: none;
